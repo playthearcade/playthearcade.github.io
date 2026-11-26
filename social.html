@@ -417,7 +417,7 @@ svg.i { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round
 </main>
 
 <script src="games.js?v=291"></script>
-<script src="account.js?v=45"></script>
+<script src="account.js?v=46"></script>
 <script src="assistant.js?v=7"></script>
 <script src="console.js?v=6"></script>
 <script src="call.js?v=8"></script>
@@ -1800,6 +1800,7 @@ function route() {
   if (chat && chat.tx) chat.tx.stop(); chat = null;
   const h = (() => { try { return decodeURIComponent(location.hash.slice(1)); } catch (e) { return ''; } })(), i = h.indexOf('='), k = i < 0 ? h : h.slice(0, i), v = i < 0 ? '' : h.slice(i + 1);
   document.title = 'Social · The Arcade';
+  if (!me()) { view.replaceChildren(); return; } // locked until an online account (account.js onlineOnly)
   scrollTo(0, 0);
   if (k === 'u' && v) return showUser(v);
   if (k === 'me') return me() ? showUser(me()) : (setNav('me'), view.replaceChildren(empty('Your profile', 'Make an online account to post, follow players and save posts.', 'Make an account', needAccount)));
@@ -1818,7 +1819,9 @@ addEventListener('hashchange', route);
 setTimeout(() => { paintReview().catch(() => {}); }, 800); // the admin's count of posts waiting for approval
 // a clip posted from a test room's play page goes to that room
 if (ROOM) document.addEventListener('click', e => { const a = e.target.closest('a[href^="play.html"], a[href="index.html"]'); if (a && !/clipsroom=/.test(a.getAttribute('href')) && /play\.html/.test(a.getAttribute('href'))) a.href += '&clipsroom=' + ROOM; }, true);
-ArcadeAccount.ready().then(() => { loadSoc(); route(); });
+// 2026-11-26 (owner's request): Social is only for online accounts; local accounts and guests get the lock screen
+ArcadeAccount.onlineOnly('Social');
+ArcadeAccount.ready().then(() => { if (!me()) return; loadSoc(); route(); });
 let lastName = me();
 setInterval(() => { if (me() !== lastName) { lastName = me(); loadSoc(); forYouCache = null; route(); } }, 1000);
 </script>

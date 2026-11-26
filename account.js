@@ -873,6 +873,35 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 
+
+  /* 2026-11-26 (owner's request): Social and the Global chat are only for online accounts. Local accounts and guests
+     still see the tabs/buttons, but the page is covered by this screen until they make (or log in to) an online one. */
+  var gates = [];
+  function onlineOnly(what, onOpen) {
+    gates.push({ what: what, cb: onOpen });
+    paintGate();
+    if (gates.length === 1) setInterval(paintGate, 800);
+    return kind() === 'online';
+  }
+  function paintGate() {
+    if (!gates.length) return;
+    var g = $('acctGate'), on = kind() === 'online';
+    if (on) { if (g) { g.remove(); document.documentElement.style.overflow = ''; gates.forEach(function (x) { if (x.cb) try { x.cb(); } catch (e) {} }); } return; }
+    if (g || !document.body) return;
+    css();
+    var what = gates[0].what, loc = kind() === 'local';
+    g = document.createElement('div'); g.id = 'acctGate'; g.setAttribute('role', 'dialog'); g.setAttribute('aria-modal', 'true');
+    g.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147482000;background:#0b0b0d;display:flex;align-items:center;justify-content:center;padding:16px;font:15px/1.5 Archivo,system-ui,sans-serif;color:#f4f4f5;text-align:center';
+    g.innerHTML = '<div style="max-width:420px"><div style="font-size:46px;line-height:1">🔒</div>' +
+      '<h2 style="margin:12px 0 6px;font-size:24px">' + esc(what) + ' is for online accounts</h2>' +
+      '<p style="margin:0 0 18px;color:#a1a1aa">' + (loc ? 'You’re on a local account. ' : '') + 'Make a free online account to see ' + esc(what) + '. It takes ten seconds' + (loc ? ' and all your progress comes with you.' : '.') + '</p>' +
+      '<div style="display:flex;flex-direction:column;gap:8px">' +
+      '<button type="button" data-g="signup" style="font:700 15px system-ui,sans-serif;padding:12px;border:0;border-radius:12px;background:#ff8a00;color:#111;cursor:pointer">Make an online account</button>' +
+      '<button type="button" data-g="login" style="font:700 15px system-ui,sans-serif;padding:12px;border:1px solid #3f3f46;border-radius:12px;background:transparent;color:#f4f4f5;cursor:pointer">Log in</button>' +
+      '<a href="index.html" style="color:#a1a1aa;margin-top:6px">Back to the games</a></div></div>';
+    g.onclick = function (e) { var b = e.target.closest && e.target.closest('[data-g]'); if (b) openWelcome(b.getAttribute('data-g')); };
+    document.body.appendChild(g); document.documentElement.style.overflow = 'hidden';
+  }
   window.ArcadeAccount = {
     name: name, kind: kind, ready: function () { return ready; }, sync: sync, open: openPanel, welcome: openWelcome,
     onPulled: function (f) { pulledHandlers.push(f); }, onReady: null,
@@ -881,6 +910,7 @@
     api: function (path, opt) { return api(path, opt); },
     isAdmin: function () { return isAdmin(); },
     isMod: function () { return isMod(); },
+    onlineOnly: onlineOnly,
     onLive: function (f) { liveHandlers.push(f); }, toast: toast,
     social: function () { return social; }, onSocial: function (f) { socialHandlers.push(f); if (social) f(social); }, setSocial: setSocial,
     _test: { groupOf: groupOf, localGroups: localGroups, hash: hash, score: score, syncMap: function () { return syncMap; } }

@@ -126,7 +126,7 @@
 </div>
 
 <script src="games.js?v=291"></script>
-<script src="account.js?v=45"></script>
+<script src="account.js?v=46"></script>
 <script src="assistant.js?v=7"></script>
 <script src="console.js?v=6"></script>
 <script src="call.js?v=8"></script>
@@ -391,6 +391,7 @@ document.addEventListener('visibilitychange', () => {
 });
 function connect() {
   if (idle) return;
+  if (!acctName()) { clearTimeout(retryT); if (ws) { const old = ws; ws = null; try { old.close(); } catch (e) {} } return; } // 2026-11-26: online accounts only
   clearTimeout(retryT);
   if (ws) { const old = ws; ws = null; try { old.close(); } catch (e) {} }
   const base = ((window.ArcadeAccount && ArcadeAccount.server) || 'https://arcade-realtime.arcade-realtime.workers.dev').replace(/^http/, 'ws');
@@ -558,6 +559,8 @@ $('clear').onclick = () => {
   render();
 };
 
+// 2026-11-26 (owner's request): the Global chat is only for online accounts; local accounts and guests get the lock screen
+if (window.ArcadeAccount) ArcadeAccount.onlineOnly('Global chat');
 $('meBtn').textContent = name || 'Pick a name';
 guestLock();
 render(); toBottom(); people();
